@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | G'SHOT TEAS</title>
+    <link rel="stylesheet" href="../home/home.css">
+    <link rel="stylesheet" href="admin.css">
+    <!-- Supabase Cloud Database -->
+    <script src="../js/auth-guard.js"></script>
+    <!-- Supabase Cloud Database -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Prevent content flash before auth check */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar/Nav -->
+        <header class="admin-header">
+            <div class="brand">
+                <img src="../pic/logo.png" alt="Logo">
+                <span class="brand-name">G'SHOT <span class="highlight">ADMIN</span></span>
+            </div>
+            <nav class="admin-nav">
+                <a href="dashboard.html" class="active">Dashboard</a>
+                <a href="orders.html">Orders</a>
+                <a href="bookings.html">Bookings</a>
+                <a href="inventory.html">Inventory</a>
+                <a href="../main/index.html">View Store</a>
+            </nav>
+            <div class="admin-profile">
+                <div class="notif-group">
+                    <!-- Orders Notification -->
+                    <div class="notif-item">
+                        <div class="icon-btn" title="Orders">🛒<span class="dot"></span></div>
+                        <div class="notif-dropdown">
+                            <div class="dropdown-header">Recent Orders</div>
+                            <div class="dropdown-list">
+                                <div class="notif-entry">
+                                    <div class="entry-icon">🍔</div>
+                                    <div class="entry-text">
+                                        <p>New Order #GS-8893</p>
+                                        <span>Just now</span>
+                                    </div>
+                                </div>
+                                <div class="notif-entry">
+                                    <div class="entry-icon">🥤</div>
+                                    <div class="entry-text">
+                                        <p>Order #GS-8891 Prepared</p>
+                                        <span>15 mins ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="orders.html" class="view-all">View All Orders</a>
+                        </div>
+                    </div>
+
+                    <!-- Bookings Notification -->
+                    <div class="notif-item">
+                        <div class="icon-btn" title="Bookings">📅<span class="dot"></span></div>
+                        <div class="notif-dropdown">
+                            <div class="dropdown-header">Event Bookings</div>
+                            <div class="dropdown-list">
+                                <div class="notif-entry">
+                                    <div class="entry-icon">✨</div>
+                                    <div class="entry-text">
+                                        <p>Wedding Catering Request</p>
+                                        <span>2 hours ago</span>
+                                    </div>
+                                </div>
+                                <div class="notif-entry">
+                                    <div class="entry-icon">🏢</div>
+                                    <div class="entry-text">
+                                        <p>Corporate Coffee Bar Setup</p>
+                                        <span>5 hours ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="bookings.html" class="view-all">View All Bookings</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="icon-btn" title="Settings">⚙️</div>
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=fdd835&color=000" alt="Admin">
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <div class="breadcrumb">HOME > BUSINESS DASHBOARD</div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Total Profits</span>
+                        <div class="stat-icon">💵</div>
+                    </div>
+                    <div id="total-profits-value" class="stat-value">₱0.00</div>
+                    <div class="stat-change positive">↗ 0% <span>vs last month</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Best Seller</span>
+                        <div class="stat-icon">⭐</div>
+                    </div>
+                    <div id="best-seller-name" class="stat-value">Loading...</div>
+                    <div id="best-seller-tag" class="stat-tag top-rated">TOP RATED <span id="best-seller-count">0
+                            orders</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Pending Orders</span>
+                        <div class="stat-icon">🕒</div>
+                    </div>
+                    <div id="pending-orders-count" class="stat-value">0</div>
+                    <div class="stat-tag action-required">! Action Required</div>
+                </div>
+            </div>
+
+            <div class="main-grid">
+                <!-- Chart Area -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Sales Trends</h3>
+                        <div class="chart-tabs">
+                            <span class="active">Week</span>
+                            <span>Month</span>
+                        </div>
+                    </div>
+                    <canvas id="salesChart"></canvas>
+                </div>
+
+                <!-- Business Insights Card -->
+                <aside class="insights-card">
+                    <div class="insight-header">
+                        <div class="insight-icon">📉</div>
+                        <div class="insight-title">
+                            <h4>Business Insights</h4>
+                            <span class="status-dot"></span> SMART ANALYSIS
+                        </div>
+                    </div>
+
+                    <div class="underperforming-section">
+                        <h5>⚠️ Low Performing Items</h5>
+                        <ul id="low-sales-list" class="low-sales-list">
+                            <li>Analyzing data...</li>
+                        </ul>
+                    </div>
+
+                    <div class="ai-solution-box">
+                        <div class="solution-header">
+                            <span class="sparkle">✨</span> AI SUGGESTED SOLUTION
+                        </div>
+                        <div id="ai-suggestion-text" class="solution-content">
+                            Gathering insights from your database to help boost your sales...
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Live Orders -->
+            <div class="orders-section">
+                <div class="orders-header">
+                    <h3>Live Orders</h3>
+                    <span class="order-count">6 New Orders</span>
+                </div>
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>ORDER ID</th>
+                            <th>CUSTOMER</th>
+                            <th>ITEMS</th>
+                            <th>PRICE</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#GS-8891</td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">JD</div> John Doe
+                                </div>
+                            </td>
+                            <td>2x Double Smash Burger</td>
+                            <td>₱570.00</td>
+                            <td><span class="badge pending">PENDING</span></td>
+                            <td>
+                                <button class="btn-approve">APPROVE PAYMENT</button>
+                                <button class="btn-mark">MARK DONE</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>#GS-8892</td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar blue">SC</div> Sarah Connor
+                                </div>
+                            </td>
+                            <td>1x Matcha Zen, 1x Pizza</td>
+                            <td>₱595.00</td>
+                            <td><span class="badge prep">IN PREP</span></td>
+                            <td>
+                                <button class="btn-approve disabled">APPROVE PAYMENT</button>
+                                <button class="btn-mark">MARK DONE</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+
+
+    <script src="../js/admin-notifications.js"></script>
+    <script type="module" src="../js/admin-ai.js"></script>
+    <script>
+        // Sales Chart
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+                datasets: [{
+                    label: 'Sales',
+                    data: [12, 19, 10, 15, 8, 25, 20],
+                    borderColor: '#fdd835',
+                    backgroundColor: 'rgba(253, 216, 53, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { display: false },
+                    x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)' } }
+                }
+            }
+        });
+
+        // Dashboard Statistics
+        async function loadDashboardStats() {
+            try {
+                const { data: allOrders, error } = await window.supabase
+                    .from('orders')
+                    .select('*');
+
+                if (error) throw error;
+
+                let totalProfits = 0;
+                let pendingCount = 0;
+                let productSales = {};
+
+                allOrders.forEach(order => {
+                    // Total Profits Logic: Sum prices of non-cancelled orders
+                    if (order.status !== 'cancelled') {
+                        const price = parseFloat(order.total_price.replace('₱', '').replace(/,/g, '')) || 0;
+                        totalProfits += price;
+                    }
+
+                    // Pending Orders Count
+                    if (order.status === 'pending') {
+                        pendingCount++;
+                    }
+
+                    // Best Seller Parsing
+                    // items format: "2x Double Smash Burger, 1x Matcha Zen"
+                    if (order.items) {
+                        const itemsList = order.items.split(', ');
+                        itemsList.forEach(itemStr => {
+                            const match = itemStr.match(/(\d+)x\s+(.+)/);
+                            if (match) {
+                                const qty = parseInt(match[1]);
+                                const productName = match[2];
+                                productSales[productName] = (productSales[productName] || 0) + qty;
+                            }
+                        });
+                    }
+                });
+
+                // Update Total Profits
+                document.getElementById('total-profits-value').textContent = `₱${totalProfits.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+                // Update Pending Orders
+                document.getElementById('pending-orders-count').textContent = pendingCount;
+
+                // Update Best Seller
+                let bestProduct = "N/A";
+                let maxQty = 0;
+                for (const [name, qty] of Object.entries(productSales)) {
+                    if (qty > maxQty) {
+                        maxQty = qty;
+                        bestProduct = name;
+                    }
+                }
+
+                document.getElementById('best-seller-name').textContent = bestProduct;
+                document.getElementById('best-seller-count').textContent = `${maxQty} items sold`;
+
+                // Update Order Count Badge in header
+                const orderCountBadge = document.querySelector('.order-count');
+                if (orderCountBadge) {
+                    orderCountBadge.textContent = `${pendingCount} New Orders`;
+                }
+
+            } catch (err) {
+                console.error("Dashboard Stats Error:", err);
+            }
+        }
+
+        // Dynamic Live Orders
+        async function fetchLiveOrders() {
+            const list = document.querySelector('.orders-table tbody');
+            try {
+                const { data, error } = await window.supabase
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    list.innerHTML = '';
+                    data.forEach(order => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>#${order.id.toString().slice(-6).toUpperCase()}</td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">${order.customer_name ? order.customer_name.charAt(0).toUpperCase() : '?'}</div> ${order.customer_name || 'Guest'}
+                                </div>
+                            </td>
+                            <td>${order.items}</td>
+                            <td>${order.total_price}</td>
+                            <td><span class="badge ${order.status}">${order.status.toUpperCase()}</span></td>
+                            <td>
+                                <a href="orders.html" class="btn-mark">VIEW</a>
+                            </td>
+                        `;
+                        list.appendChild(row);
+                    });
+                }
+            } catch (err) {
+                console.error("Live Orders Error:", err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+            fetchLiveOrders();
+        });
+    </script>
+</body>
+
+</html>

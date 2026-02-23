@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders | G'SHOT ADMIN</title>
+    <link rel="stylesheet" href="../home/home.css">
+    <link rel="stylesheet" href="admin.css">
+    <script src="../js/auth-guard.js"></script>
+    <!-- Supabase Cloud Database -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <style>
+        /* Prevent content flash before auth check */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: var(--primary-yellow);
+            color: #000;
+            border-color: var(--primary-yellow);
+        }
+
+        .order-details-mini {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 0.3rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="brand">
+                <img src="../pic/logo.png" alt="Logo">
+                <span class="brand-name">G'SHOT <span class="highlight">ADMIN</span></span>
+            </div>
+            <nav class="admin-nav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="orders.html" class="active">Orders</a>
+                <a href="bookings.html">Bookings</a>
+                <a href="inventory.html">Inventory</a>
+                <a href="../main/index.html">View Store</a>
+            </nav>
+            <div class="admin-profile">
+                <div class="notif-group">
+                    <!-- Orders Notification -->
+                    <div class="notif-item">
+                        <div class="icon-btn" title="Orders">🛒<span class="dot"></span></div>
+                        <div class="notif-dropdown">
+                            <div class="dropdown-header">Recent Orders</div>
+                            <div class="dropdown-list">
+                                <!-- Loaded via JS -->
+                            </div>
+                            <a href="orders.html" class="view-all">View All Orders</a>
+                        </div>
+                    </div>
+
+                    <!-- Bookings Notification -->
+                    <div class="notif-item">
+                        <div class="icon-btn" title="Bookings">📅<span class="dot"></span></div>
+                        <div class="notif-dropdown">
+                            <div class="dropdown-header">Event Bookings</div>
+                            <div class="dropdown-list">
+                                <!-- Loaded via JS -->
+                            </div>
+                            <a href="bookings.html" class="view-all">View All Bookings</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="icon-btn" title="Settings">⚙️</div>
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=fdd835&color=000" alt="Admin">
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <div class="inventory-header">
+                <div>
+                    <div class="breadcrumb">HOME > ORDERS</div>
+                    <h2>Order Management</h2>
+                </div>
+            </div>
+
+            <div class="filters-bar">
+                <button class="filter-btn active" data-status="all">All Orders</button>
+                <button class="filter-btn" data-status="pending">Pending</button>
+                <button class="filter-btn" data-status="preparing">Preparing</button>
+                <button class="filter-btn" data-status="completed">Completed</button>
+            </div>
+
+            <div class="orders-section">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>ORDER ID</th>
+                            <th>DATE</th>
+                            <th>CUSTOMER</th>
+                            <th>ITEMS</th>
+                            <th>TOTAL</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-list">
+                        <!-- Loaded from JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/admin-notifications.js"></script>
+    <script>
+        async function fetchOrders(status = 'all') {
+            const list = document.getElementById('orders-list');
+            list.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading orders...</td></tr>';
+
+            try {
+                let query = window.supabase
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (status !== 'all') {
+                    query = query.eq('status', status);
+                }
+
+                const { data, error } = await query;
+
+                if (error) throw error;
+
+                list.innerHTML = '';
+                if (data.length === 0) {
+                    list.innerHTML = '<tr><td colspan="7" style="text-align:center;">No orders found.</td></tr>';
+                    return;
+                }
+
+                data.forEach(order => {
+                    const date = new Date(order.created_at).toLocaleDateString('en-PH', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>#${order.id.toString().slice(-6).toUpperCase()}</td>
+                        <td>${date}</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="avatar">${order.customer_name.charAt(0).toUpperCase()}</div>
+                                ${order.customer_name}
+                            </div>
+                        </td>
+                        <td>
+                            <div>${order.items}</div>
+                        </td>
+                        <td style="font-weight: 700;">${order.total_price}</td>
+                        <td><span class="badge ${order.status}">${order.status.toUpperCase()}</span></td>
+                        <td>
+                            ${order.status === 'pending' ? `<button class="btn-approve" onclick="updateStatus('${order.id}', 'preparing')">PREPARE</button>` : ''}
+                            ${order.status === 'preparing' ? `<button class="btn-approve" onclick="updateStatus('${order.id}', 'completed')">DONE</button>` : ''}
+                            <button class="btn-mark" onclick="deleteOrder('${order.id}')" style="color:#ff4444">DELETE</button>
+                        </td>
+                    `;
+                    list.appendChild(row);
+                });
+
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Failed to load orders.</td></tr>';
+            }
+        }
+
+        async function updateStatus(id, newStatus) {
+            try {
+                const { error } = await window.supabase
+                    .from('orders')
+                    .update({ status: newStatus })
+                    .eq('id', id);
+
+                if (error) throw error;
+                fetchOrders();
+            } catch (err) {
+                alert("Error updating status: " + err.message);
+            }
+        }
+
+        async function deleteOrder(id) {
+            if (!confirm("Are you sure you want to delete this order?")) return;
+            try {
+                const { error } = await window.supabase
+                    .from('orders')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+                fetchOrders();
+            } catch (err) {
+                alert("Error deleting order: " + err.message);
+            }
+        }
+
+        // Initialize Filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                fetchOrders(btn.dataset.status);
+            });
+        });
+
+        // Initial Load
+        document.addEventListener('DOMContentLoaded', () => fetchOrders());
+    </script>
+</body>
+
+</html>
