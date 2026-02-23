@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Menu | G'SHOT TEAS</title>
+    <meta name="description"
+        content="Explore our delicious menu of Milk Teas, Coffee, Pizza, Burgers, and Rice Meals. Ordering made easy.">
+    <link rel="stylesheet" href="../home/home.css">
+    <link rel="stylesheet" href="../home/ai.css">
+    <link rel="stylesheet" href="../home/location.css">
+    <!-- Leaflet Map Assets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="menu.css">
+</head>
+
+<body>
+    <div class="menu-app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <a href="../main/index.html">
+                    <img src="../pic/logo.png" alt="G'SHOT TEAS Logo">
+                </a>
+            </div>
+
+            <a href="../main/index.html" class="back-link">
+                <span class="icon">←</span> Back to Home
+            </a>
+
+            <nav class="categories">
+                <h3>Menu Categories</h3>
+                <ul id="category-list">
+                    <li data-category="milkteas">
+                        <span class="icon">🥤</span> Milk Teas
+                    </li>
+                    <li data-category="coffee">
+                        <span class="icon">☕</span> Coffee
+                    </li>
+                    <li data-category="pizza">
+                        <span class="icon">🍕</span> Pizza
+                    </li>
+                    <li class="active" data-category="burgers">
+                        <span class="icon">🍔</span> Burgers
+                    </li>
+                    <li data-category="ricemeals">
+                        <span class="icon">🍚</span> Rice Meals
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="flash-deal">
+                <p>Flash Deal! ⚡</p>
+                <small>Get 20% off on all dessert items today.</small>
+                <button id="flash-deal-btn">CLAIM NOW</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="menu-header">
+                <div class="search-bar">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="search-input" placeholder="Search for your favorite dish...">
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <div class="cart-icon">
+                        <span class="badge" id="cart-badge">0</span>
+                        <span class="icon">🛒</span>
+                    </div>
+
+                    <div class="location-btn-wrapper" id="location-btn-wrapper" style="display: none;">
+                        <button class="btn-location-trigger" data-open-location>
+                            <span class="icon">📍</span>
+                        </button>
+                    </div>
+
+                    <div class="user-profile" id="user-profile">
+                        <span id="user-display-name">User</span>
+                        <div class="profile-avatar">👤</div>
+                        <div class="dropdown-menu">
+                            <a href="#" id="logout-link">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="menu-display">
+                <div class="display-header">
+                    <div class="title-area">
+                        <h2 id="category-title">Juicy Burgers</h2>
+                        <p id="category-desc">Discover our selection of premium hand-crafted burgers</p>
+                    </div>
+                    <div class="sort-area">
+                        <span>Sort by:</span>
+                        <div class="select-wrapper">
+                            <select id="sort-select">
+                                <option>Most Popular</option>
+                                <option>Price: Low to High</option>
+                                <option>Price: High to Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-grid" id="menu-grid">
+                    <!-- Cards will be dynamically injected via JS -->
+                </div>
+
+                <div class="pagination">
+                    <button class="prev">‹</button>
+                    <button class="active">1</button>
+                    <button>2</button>
+                    <button>3</button>
+                    <button class="next">›</button>
+                </div>
+            </section>
+
+            <footer class="menu-footer">
+                <div class="footer-links">
+                    <a href="#">Dietary Info</a>
+                    <a href="#">Contact Us</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+                <p>&copy; 2024 G'SHOT TEAS. All rights reserved.</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-header">
+            <h2>Your <span>Cart</span></h2>
+            <button class="close-cart" id="close-cart">✕</button>
+        </div>
+        <div class="cart-items" id="cart-items-container">
+            <!-- Items injected via JS -->
+            <div class="empty-cart-msg">Your basket is empty</div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cart-total-amount">₱0</span>
+            </div>
+            <button class="btn-checkout">PROCEED TO CHECKOUT</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('gshot-user'));
+            const userProfile = document.getElementById('user-profile');
+            const displayName = document.getElementById('user-display-name');
+            const logoutLink = document.getElementById('logout-link');
+
+            if (user) {
+                displayName.textContent = user.name || 'User';
+
+                // Add Dashboard link for admins
+                if (user.role === 'admin') {
+                    const dropdown = userProfile.querySelector('.dropdown-menu');
+                    const dashboardLink = document.createElement('a');
+                    dashboardLink.href = '../admin/dashboard.html';
+                    dashboardLink.textContent = 'Admin Dashboard';
+                    dashboardLink.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+                    dashboardLink.style.marginBottom = '5px';
+                    dashboardLink.style.paddingBottom = '10px';
+                    dropdown.insertBefore(dashboardLink, logoutLink);
+
+                    // Show Location button for admins
+                    const locWrapper = document.getElementById('location-btn-wrapper');
+                    if (locWrapper) locWrapper.style.display = 'block';
+                }
+            } else {
+                displayName.textContent = 'Guest';
+            }
+
+            logoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('gshot-user');
+                window.location.href = '../main/index.html';
+            });
+
+            // Toggle dropdown
+            userProfile.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userProfile.classList.toggle('active');
+            });
+
+            document.addEventListener('click', () => {
+                userProfile.classList.remove('active');
+            });
+        });
+    </script>
+    <script src="../js/ai.js" type="module"></script>
+    <script src="../js/customer-orders.js"></script>
+    <script src="../js/location-manager.js"></script>
+    <script src="menu.js"></script>
+</body>
+
+</html>
